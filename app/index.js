@@ -11,6 +11,7 @@ import { user } from "user-profile";
 import * as fs from "fs";
 import { battery } from "power";
 import { inbox } from "file-transfer";
+import { AnalogClock } from "../common/analog-clock";
 
 const THEMES = {
   red: ["F93535", "CC4848", "AB4545"],
@@ -41,9 +42,7 @@ let heartSensor;
 
 let myDate = $("mydate");
 let myWeek = $("myweek");
-let myHours = $("hours");
-let myMins = $("minutes");
-let mySecs = $("seconds");
+let analogClock = new AnalogClock($("hours"), $("minutes"), $("seconds"));
 let myStats = $("mystats");
 let myBatt = $("batt");
 
@@ -61,12 +60,7 @@ function onTick(now) {
   myDate.text = now.getDate();
   myWeek.text = weekNames[now.getDay()];
 
-  let hours = now.getHours() % 12;
-  let mins = now.getMinutes();
-  let secs = now.getSeconds();
-  myHours.groupTransform.rotate.angle = (hours + mins / 60) * 30;
-  myMins.groupTransform.rotate.angle = mins * 6;
-  mySecs.groupTransform.rotate.angle = secs * 6;
+  analogClock.update(now);
 
   myBatt.x2 = Math.round(battery.chargeLevel * 7 / 25) - 14;
 
