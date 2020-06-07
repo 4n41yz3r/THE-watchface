@@ -12,6 +12,7 @@ import * as fs from "fs";
 import { battery } from "power";
 import { inbox } from "file-transfer";
 import { AnalogClock } from "../common/analog-clock";
+import * as ring from "../common/ring";
 
 const THEMES = {
   red: ["F93535", "CC4848", "AB4545"],
@@ -42,14 +43,17 @@ let heartSensor;
 
 let myDate = $("mydate");
 let myWeek = $("myweek");
-let analogClock = new AnalogClock($("hours"), $("minutes"), $("seconds"));
 let myStats = $("mystats");
 let myBatt = $("batt");
 
-let myRingTL = $("today_tl");
-let myRingTR = $("today_tr");
-let myRingBL = $("today_bl");
-let myRingBR = $("today_br");
+let analogClock = new AnalogClock($("hours"), $("minutes"), $("seconds"));
+
+let ringCollection = new ring.GoalRingCollection([
+  new ring.CaloriesRing($("today_tl")),
+  new ring.StepsRing($("today_tr")),
+  new ring.DistanceRing($("today_br")),
+  NOCLIMB ? new ring.ActiveRing($("today_bl")) : new ring.ClimbRing($("today_bl"))
+]);
 
 function $(s) {
   return document.getElementById(s);
@@ -70,16 +74,8 @@ function onTick(now) {
     if (showRings) {
       if (nowTime - lastUpdatedRings > 30000) {
         lastUpdatedRings = nowTime;
-        let today = health.today.adjusted;
-        let goal = health.goals;
-        updateRing(myRingTL, "cal", goal, today);
-        updateRing(myRingTR, "step", goal, today);
-        updateRing(myRingBR, "dist", goal, today);
-        if (NOCLIMB) {
-          updateRing(myRingBL, "active", goal, today);
-        } else {
-          updateRing(myRingBL, "climb", goal, today);
-        }
+        
+        ringCollection.update(health);
       }
     }
 
@@ -121,22 +117,6 @@ $("btm_half").onclick = () => {
     }
   }
 };
-
-function updateRing(node, holder, goal, today) {
-  let angle = 0;
-  if (holder === "cal") {
-    angle = (today.calories || 0) * 360 / (goal.calories || 400);
-  } else if (holder === "step") {
-    angle = (today.steps || 0) * 360 / (goal.steps || 10000);
-  } else if (holder === "dist") {
-    angle = (today.distance || 0) * 360 / (goal.distance || 7200);
-  } else if (holder === "climb") {
-    angle = (today.elevationGain || 0) * 360 / (goal.elevationGain || 20);
-  } else if (holder === "active") {
-    angle = (today.activeMinutes || 0) * 360 / (goal.activeMinutes || 30);
-  }
-  node.sweepAngle = Math.min(360, Math.round(angle));
-}
 
 function updateStat() {
   let today = health.today.adjusted;
